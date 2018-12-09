@@ -53,6 +53,10 @@ put '/hostnames' do
   status 204
 end
 
+get '/remote-address' do
+  request.env['REMOTE_ADDR']
+end
+
 not_found do
   'Unknown action.'
 end
