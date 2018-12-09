@@ -14,6 +14,9 @@ config = YAML.safe_load(config_file_content('config.yml'))
 last_serial = { date: nil, counter: 0 }
 
 put '/hostnames' do
+  return status 500 if config['auth_token'].blank?
+  return status 401 if request.env['HTTP_X_AUTHORIZATION'] != config['auth_token']
+
   begin
     data = JSON.parse(request.body.read)
   rescue JSON::ParserError
