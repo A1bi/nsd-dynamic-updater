@@ -48,7 +48,7 @@ put '/hostnames' do
   return status 500 unless development? || File.exist?(target)
   File.write(target, zonefile.result(binding))
 
-  return 500 unless development? || system("nsd-control reload '#{target_zone}'")
+  return 500 unless development? || system("nsd-control reload '#{config['target_zone']}'")
 
   status 204
 end

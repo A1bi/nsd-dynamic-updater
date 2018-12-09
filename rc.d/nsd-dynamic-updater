@@ -1,12 +1,12 @@
 #!/bin/sh
 
-# PROVIDE: nsd-dynamic-updater
+# PROVIDE: nsd_dynamic_updater
 # REQUIRE: LOGIN nsd
 # KEYWORD: shutdown
 
 . /etc/rc.subr
 
-name="nsd-dynamic-updater"
+name="nsd_dynamic_updater"
 rcvar="${name}_enable"
 
 load_rc_config $name
@@ -15,6 +15,6 @@ export RACK_ENV=production
 
 pidfile="/var/run/${name}.pid"
 command="/usr/sbin/daemon"
-command_args="-c -f -P ${pidfile} -u sinatra -r /usr/local/bin/ruby /root/nsd-dynamic-updater/app.rb"
+command_args="-c -f -P ${pidfile} -u sinatra -r /usr/local/bin/ruby /home/sinatra/nsd-dynamic-updater/app.rb -o ::1"
 
 run_rc_command "$1"
