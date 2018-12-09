@@ -41,6 +41,8 @@ put '/hostnames' do
   zonefile = ERB.new(config_file_content('zonefile.zone.erb'))
   File.write(config['target_zonefile_path'], zonefile.result(binding))
 
+  return 500 unless system('service nsd reload')
+
   status 204
 end
 
