@@ -10,6 +10,10 @@ def config_file_content(filename)
   File.read(File.expand_path("config/#{filename}", File.dirname(__FILE__)))
 end
 
+def development?
+  Sinatra::Base.development?
+end
+
 config = YAML.safe_load(config_file_content('config.yml'))
 last_serial = { date: nil, counter: 0 }
 
@@ -23,7 +27,6 @@ put '/hostnames' do
     return status 400
   end
 
-  return status 500 if config['target_zonefile_path'].blank?
   return status 422 if data['prefix'].blank? || data['ipv4'].blank?
 
   if last_serial[:date] == Date.today
@@ -38,10 +41,14 @@ put '/hostnames' do
   prefix = data['prefix']
   ipv4 = data['ipv4']
 
+  return status 500 if config['target_zone'].blank?
   zonefile = ERB.new(config_file_content('zonefile.zone.erb'))
-  File.write(config['target_zonefile_path'], zonefile.result(binding))
+  target = development? ? '/tmp' : '/usr/local/etc/nsd/zones'
+  target += "/#{config['target_zone']}.zone"
+  return status 500 unless development? || File.exist?(target)
+  File.write(target, zonefile.result(binding))
 
-  return 500 unless system('service nsd reload')
+  return 500 unless development? || system("nsd-control reload '#{target_zone}'")
 
   status 204
 end
