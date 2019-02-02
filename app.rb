@@ -7,8 +7,12 @@ require 'yaml'
 require 'yaml/store'
 require 'date'
 
+def config_file_path(filename)
+  File.expand_path("config/#{filename}", File.dirname(__FILE__))
+end
+
 def config_file_content(filename)
-  File.read(File.expand_path("config/#{filename}", File.dirname(__FILE__)))
+  File.read(config_file_path(filename))
 end
 
 def development?
@@ -21,7 +25,7 @@ end
 
 configure do
   config = YAML.safe_load(config_file_content('config.yml'))
-  set :addresses, YAML::Store.new('config/addresses.yml')
+  set :addresses, YAML::Store.new(config_file_path('addresses.yml'))
   set :auth_tokens, config['auth_tokens']
   set :target_zone, config['target_zone']
   set :last_serial, date: nil, counter: 0
