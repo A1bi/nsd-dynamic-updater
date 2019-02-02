@@ -1,2 +1,3 @@
 /config/config.yml
 /config/zonefile.zone.erb
+/config/addresses.yml
