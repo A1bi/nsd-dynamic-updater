@@ -12,7 +12,6 @@ rubocop:
     - *bundle
   script:
     - rubocop
-  allow_failure: true
 
 audit:
   extends: .default-tags

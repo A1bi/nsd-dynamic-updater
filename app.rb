@@ -33,7 +33,9 @@ end
 
 put '/hostnames' do
   return status 500 unless settings.auth_tokens&.any?
-  hostname = settings.auth_tokens.key(request.env['HTTP_X_AUTHORIZATION'])&.to_sym
+
+  hostname = settings.auth_tokens
+                     .key(request.env['HTTP_X_AUTHORIZATION'])&.to_sym
   return status 401 unless hostname.present?
 
   begin
@@ -59,16 +61,18 @@ put '/hostnames' do
     settings.addresses[:v4] ||= {}
     settings.addresses[:v6][hostname] = data['prefix']
     settings.addresses[:v4][hostname] = data['ipv4']
-
     return status 500 if settings.target_zone.blank?
+
     zonefile = ERB.new(config_file_content('zonefile.zone.erb'))
     target = development? ? '/tmp' : '/usr/local/etc/nsd/zones'
     target += "/#{settings.target_zone}.zone"
     return status 500 unless development? || File.exist?(target)
+
     File.write(target, zonefile.result(binding))
   end
 
-  return 500 unless development? || system("nsd-control reload '#{settings.target_zone}'")
+  return 500 unless development? ||
+                    system("nsd-control reload '#{settings.target_zone}'")
 
   status 204
 end
