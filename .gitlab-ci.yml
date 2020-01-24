@@ -1,0 +1,21 @@
+.default-tags:
+  tags: [ruby-2.6]
+
+.bundle: &bundle
+  - bundle install -j $(sysctl -n hw.ncpu)
+
+rubocop:
+  extends: .default-tags
+  except:
+    - schedules
+  before_script:
+    - *bundle
+  script:
+    - rubocop
+  allow_failure: true
+
+audit:
+  extends: .default-tags
+  script:
+    - gem install bundler-audit
+    - bundle audit check --update
