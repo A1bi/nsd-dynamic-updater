@@ -2,7 +2,7 @@
   tags: [ruby-2.6]
 
 .bundle: &bundle
-  - bundle install -j $(sysctl -n hw.ncpu)
+  - bundle install -j $(sysctl -n hw.ncpu) --without development
 
 rubocop:
   extends: .default-tags

@@ -53,7 +53,7 @@ put '/hostnames' do
     settings.last_serial[:counter] = 0
   end
 
-  counter = format('%.2d', settings.last_serial[:counter])
+  counter = format('%<counter>.2d', counter: settings.last_serial[:counter])
   serial = "#{Time.now.strftime('%Y%m%d')}#{counter}"
 
   settings.addresses.transaction do
