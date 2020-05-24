@@ -30,16 +30,20 @@ def development?
 end
 
 def addr_for_host(host, address_id, suffix: '')
-  address = settings.addresses[host.to_s][address_id.to_s]
-  # cut off trailing colon if suffix can't be zero-shortened
-  address.delete_suffix!(':') if suffix.count(':') > 2
+  address = (settings.addresses[host.to_s] || {})[address_id.to_s].dup
+  if address.nil?
+    address = '::1'
+  else
+    # cut off trailing colon if suffix can't be zero-shortened
+    address.delete_suffix!(':') if suffix && suffix.count(':') > 2
+    address << suffix
+  end
   # this will raise an exception for invalid resulting addresses
-  IPAddr.new("#{address}#{suffix}")
+  IPAddr.new(address)
 end
 
 def address_record(name, host, address_id, suffix: '')
   address = addr_for_host(host, address_id, suffix: suffix)
-  address ||= '::1'
   record_type = address.ipv4? ? 'A' : 'AAAA'
 
   "#{name} IN #{record_type} #{address}"
