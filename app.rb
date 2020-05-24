@@ -102,7 +102,10 @@ put '/hostnames' do
 end
 
 get '/remote-address' do
-  request.ip
+  # request.ip alone won't work here
+  # it will always priorize REMOTE_ADDR in a jailed environment
+  # because REMOTE_ADDR won't be a loopback address but a global one
+  request.env['HTTP_X_FORWARDED_FOR'] || request.ip
 end
 
 not_found do
