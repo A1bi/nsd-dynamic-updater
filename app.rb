@@ -102,7 +102,7 @@ put '/hostnames' do
 end
 
 get '/remote-address' do
-  request.env['REMOTE_ADDR']
+  request.ip
 end
 
 not_found do
