@@ -1,2 +1,6 @@
-auth_tokens:
+clients:
+  - name: foo
+    auth_token: foobar
+    adresses:
+      - main
 target_zone:

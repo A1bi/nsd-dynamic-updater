@@ -2,6 +2,7 @@
 
 require 'sinatra'
 require 'sinatra/reloader' if development?
+require 'byebug' if development?
 require 'active_support/core_ext/object/blank'
 require 'yaml'
 require 'yaml/store'
@@ -15,28 +16,39 @@ def config_file_content(filename)
   File.read(config_file_path(filename))
 end
 
+def zonefile_path
+  filename = "#{settings.target_zone}.zone"
+  if development?
+    File.expand_path(filename, File.dirname(__FILE__))
+  else
+    "/usr/local/etc/nsd/zones/#{filename}"
+  end
+end
+
 def development?
   Sinatra::Base.development?
 end
 
-def addr_for_host(hostname, type = :v6)
-  settings.addresses[type][hostname] || (type == :v6 ? '::' : '127.0.0.1')
+def addr_for_host(host, address_id, suffix: '')
+  address = settings.addresses[host.to_s][address_id.to_s]
+  # this will raise an exception for invalid resulting addresses
+  IPAddr.new("#{address}#{suffix}").to_s
 end
 
 configure do
   config = YAML.safe_load(config_file_content('config.yml'))
   set :addresses, YAML::Store.new(config_file_path('addresses.yml'))
-  set :auth_tokens, config['auth_tokens']
+  set :clients, config['clients']
   set :target_zone, config['target_zone']
   set :last_serial, date: nil, counter: 0
 end
 
 put '/hostnames' do
-  return status 500 unless settings.auth_tokens&.any?
+  return status 500 if settings.clients.nil? || settings.target_zone.blank?
 
-  hostname = settings.auth_tokens
-                     .key(request.env['HTTP_X_AUTHORIZATION'])&.to_sym
-  return status 401 unless hostname.present?
+  auth_token = request.env['HTTP_X_AUTHORIZATION']
+  client = settings.clients.find { |c| c['auth_token'] == auth_token }
+  return status 401 if client.nil?
 
   begin
     data = JSON.parse(request.body.read)
@@ -44,7 +56,7 @@ put '/hostnames' do
     return status 400
   end
 
-  return status 422 if data['prefix'].blank? || data['ipv4'].blank?
+  return status 422 unless data['addresses'].is_a? Hash
 
   if settings.last_serial[:date] == Date.today
     settings.last_serial[:counter] += 1
@@ -57,18 +69,22 @@ put '/hostnames' do
   serial = "#{Time.now.strftime('%Y%m%d')}#{counter}"
 
   settings.addresses.transaction do
-    settings.addresses[:v6] ||= {}
-    settings.addresses[:v4] ||= {}
-    settings.addresses[:v6][hostname] = data['prefix']
-    settings.addresses[:v4][hostname] = data['ipv4']
-    return status 500 if settings.target_zone.blank?
+    client_addresses = settings.addresses[client['name']] ||= {}
+
+    data['addresses'].each do |address_id, address|
+      client_addresses[address_id] = address
+    end
 
     zonefile = ERB.new(config_file_content('zonefile.zone.erb'))
-    target = development? ? '/tmp' : '/usr/local/etc/nsd/zones'
-    target += "/#{settings.target_zone}.zone"
-    return status 500 unless development? || File.exist?(target)
+    return status 500 unless development? || File.exist?(zonefile_path)
 
-    File.write(target, zonefile.result(binding))
+    begin
+      zonefile_content = zonefile.result(binding)
+    rescue IPAddr::InvalidAddressError
+      return status 422
+    end
+
+    File.write(zonefile_path, zonefile_content)
   end
 
   return 500 unless development? ||
