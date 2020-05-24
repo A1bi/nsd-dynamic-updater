@@ -1,0 +1,15 @@
+$TTL 300
+@   IN SOA ns1.a0s.de. postmaster.a0s.de. (
+    <%= serial %> ; serial
+    14400        ; refresh
+    1800         ; retry
+    604800       ; expire
+    86400 )      ; minimum
+
+@                        IN NS      ns1.a0s.de.
+                         IN NS      ns2.a0s.de.
+
+<%= address_record('blacky', :blacky, :main, suffix: 'cafe:f00:ba') %>
+<%= address_record('blacky', :blacky, :v4) %>
+<%= address_record('jaily', :blacky, :jail, suffix: 'de11:3') %>
+
