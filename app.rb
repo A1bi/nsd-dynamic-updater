@@ -31,6 +31,8 @@ end
 
 def addr_for_host(host, address_id, suffix: '')
   address = settings.addresses[host.to_s][address_id.to_s]
+  # cut off trailing colon if suffix can't be zero-shortened
+  address.delete_suffix!(':') if suffix.count(':') > 2
   # this will raise an exception for invalid resulting addresses
   IPAddr.new("#{address}#{suffix}")
 end
